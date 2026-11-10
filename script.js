@@ -1,7 +1,7 @@
 (() => {
   "use strict";
   // Change this if your backend runs somewhere else.
-  const API_BASE = "http://127.0.0.1:8000";
+  const API_BASE = "https://mental-health-score-hv5r.onrender.com";
   const CIRC = 779.2; // 2 * pi * 124
 
   const $ = (id) => document.getElementById(id);
