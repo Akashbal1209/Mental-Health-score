@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Signal — Student Wellness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <div class="brand"><span class="mark"></span><span>Signal</span></div>
+    <p class="tag">Your daily wellbeing read</p>
+  </header>
+
+  <main class="layout">
+    <section class="glass form-card">
+      <div class="intro">
+        <h1>Tell us about your day</h1>
+        <p>Move a slider and your signal updates on its own.</p>
+      </div>
+
+      <form id="predict-form" novalidate>
+        <div class="sliders">
+          <div class="sl"><div class="sl-top"><label for="avg_daily_usage_hours">Screen time</label><output id="o-usage">5.0 h</output></div><input type="range" id="avg_daily_usage_hours" min="0" max="12" step="0.1" value="5" /></div>
+          <div class="sl"><div class="sl-top"><label for="sleep_hours_per_night">Sleep</label><output id="o-sleep">7.0 h</output></div><input type="range" id="sleep_hours_per_night" min="3" max="12" step="0.1" value="7" /></div>
+          <div class="sl"><div class="sl-top"><label for="study_hours">Study</label><output id="o-study">3.0 h</output></div><input type="range" id="study_hours" min="0" max="12" step="0.1" value="3" /></div>
+          <div class="sl"><div class="sl-top"><label for="physical_activity_hours">Movement</label><output id="o-act">1.5 h</output></div><input type="range" id="physical_activity_hours" min="0" max="6" step="0.1" value="1.5" /></div>
+          <div class="sl"><div class="sl-top"><label for="daily_unlocks">Phone unlocks</label><output id="o-unl">170</output></div><input type="range" id="daily_unlocks" min="0" max="400" step="1" value="170" /></div>
+        </div>
+
+        <div class="stress-block">
+          <span class="lbl" id="stress-label">How stressed do you feel?</span>
+          <div class="segmented" id="stress_level_group" role="group" aria-labelledby="stress-label">
+            <button type="button" class="seg-btn" data-value="Low">Low</button>
+            <button type="button" class="seg-btn active" data-value="Medium">Medium</button>
+            <button type="button" class="seg-btn" data-value="High">High</button>
+            <button type="button" class="seg-btn" data-value="Very High">Very high</button>
+          </div>
+          <input type="hidden" id="stress_level" name="stress_level" value="Medium" />
+        </div>
+
+        <details class="more" open>
+          <summary>About you</summary>
+          <div class="grid">
+            <div class="field"><label for="age">Age</label><input type="number" id="age" min="18" max="24" step="1" value="21" required /><span class="error-msg"></span></div>
+            <div class="field"><label for="gender">Gender</label>
+              <select id="gender"><option>Male</option><option>Female</option></select><span class="error-msg"></span></div>
+            <div class="field"><label for="country">Country</label>
+              <input type="text" id="country" list="country-list" value="India" autocomplete="off" required />
+              <datalist id="country-list"><option value="India"></option><option value="USA"></option><option value="Canada"></option><option value="Australia"></option><option value="UK"></option><option value="Germany"></option><option value="Mexico"></option><option value="Turkey"></option><option value="France"></option></datalist>
+              <span class="error-msg"></span></div>
+            <div class="field"><label for="academic_level">Academic level</label>
+              <select id="academic_level"><option>High School</option><option selected>Undergraduate</option><option>Graduate</option></select><span class="error-msg"></span></div>
+            <div class="field"><label for="most_used_platform">Most-used platform</label>
+              <select id="most_used_platform"><option>Facebook</option><option selected>Instagram</option><option>Snapchat</option><option>Twitter</option><option>YouTube</option><option>TikTok</option><option>LinkedIn</option><option>LINE</option><option>KakaoTalk</option><option>VKontakte</option><option>WhatsApp</option><option>WeChat</option></select><span class="error-msg"></span></div>
+            <div class="field"><label for="purpose_of_use">Primary purpose</label>
+              <select id="purpose_of_use"><option>Networking</option><option>Education</option><option selected>Entertainment</option><option>News</option></select><span class="error-msg"></span></div>
+          </div>
+        </details>
+
+        <button type="submit" class="submit-btn" id="submit-btn">Read my signal</button>
+      </form>
+    </section>
+
+    <aside class="result" aria-live="polite">
+      <div class="ring-wrap">
+        <svg class="ring" viewBox="0 0 300 300" aria-hidden="true">
+          <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5B8CFF"/><stop offset="1" stop-color="#C084FC"/></linearGradient></defs>
+          <circle class="ring-bg" cx="150" cy="150" r="124" />
+          <circle class="ring-track" cx="150" cy="150" r="124" />
+          <circle class="ring-fill" id="ring-fill" cx="150" cy="150" r="124" />
+        </svg>
+        <div class="ring-center">
+          <div class="score-number" id="score-number">–</div>
+          <div class="score-max">out of 10</div>
+        </div>
+      </div>
+      <p class="score-band" id="score-band">Reading your signal…</p>
+      <p class="score-context" id="score-context">Hang on a moment.</p>
+      <p class="status" id="status" role="status"></p>
+      <p class="disclaimer">Informational only. This is not a clinical assessment. If you are struggling, please talk to someone you trust.</p>
+    </aside>
+  </main>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
