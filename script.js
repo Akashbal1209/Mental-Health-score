@@ -77,8 +77,12 @@
     goal = score;
     if (reduce) { shown = score; paintNum(score); } else if (!raf) raf = requestAnimationFrame(step);
   }
-  function showError(msg) {
+    function showError(msg) {
     statusEl.textContent = msg; statusEl.classList.add("err");
+    if (!/\d/.test(numEl.textContent)) {   // no score has been shown yet
+      bandEl.textContent = "We couldn't read your signal";
+      ctxEl.textContent = "Please try again in a moment.";
+    }
   }
 
   // ---- API
@@ -97,7 +101,7 @@
       if (typeof data.predicted_mental_health_score !== "number") { showError("The server replied without a score."); return; }
       render(data.predicted_mental_health_score);
     } catch (e) {
-      if (mine === seq) showError(`Can't reach the model at ${API_BASE}. Start the backend with: uvicorn main:app --port 8000`);
+      if (mine === seq) showError("Can't reach the server right now. Please check your connection and try again.");
     } finally {
       if (mine === seq) submitBtn.disabled = false;
     }
