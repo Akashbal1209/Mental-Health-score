@@ -1,12 +1,16 @@
+from pathlib import Path
+from typing import Literal
+
 import joblib
 import pandas as pd
 from fastapi import FastAPI
-from pydantic import BaseModel, Field
-from typing import Literal
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 
-model = joblib.load('Mental_Health_Model.pkl')
-top_countries = ['Other','India','USA','Canada','Australia','UK','Germany','Mexico','Turkey','France']
+model = joblib.load(Path(__file__).parent / 'Mental_Health_Model.pkl')
+
+top_countries = ['Other', 'India', 'USA', 'Canada', 'Australia', 'UK', 'Germany', 'Mexico', 'Turkey', 'France']
+country_lookup = {c.lower(): c for c in top_countries}   # 'india' -> 'India', 'usa' -> 'USA'
 
 app = FastAPI()
 
@@ -18,14 +22,12 @@ app.add_middleware(
 )
 
 
-# A first Pydantic Model
-
 class StudentData(BaseModel):
     age                     : int = Field(..., ge=18, le=24)
     gender                  : Literal['Male', 'Female']
     country                 : str
     academic_level          : Literal['Undergraduate', 'Graduate', 'High School']
-    most_used_platform      : Literal['Facebook', 'LinkedIn', 'Instagram', 'Snapchat','Twitter','YouTube', 'TikTok', 'LINE', 'KakaoTalk', 'VKontakte', 'WhatsApp','WeChat']
+    most_used_platform      : Literal['Facebook', 'LinkedIn', 'Instagram', 'Snapchat', 'Twitter', 'YouTube', 'TikTok', 'LINE', 'KakaoTalk', 'VKontakte', 'WhatsApp', 'WeChat']
     purpose_of_use          : Literal['Networking', 'Education', 'Entertainment', 'News']
     avg_daily_usage_hours   : float = Field(..., ge=0, le=24)
     daily_unlocks           : int   = Field(..., ge=0)
@@ -35,42 +37,34 @@ class StudentData(BaseModel):
     stress_level            : Literal['Medium', 'Low', 'Very High', 'High']
 
 
-
-
-# Describe what we send back
-
 class PredictionResponse(BaseModel):
-    predicted_mental_health_score:float
-    #6.777777 -> float
-
-
+    predicted_mental_health_score: float
 
 
 @app.get('/')
 def greet():
-    return {'message': 'Welcome to Mental Health Scorer API}'}
+    return {'message': 'Welcome to Mental Health Scorer API'}
 
 
-@app.post('/predict', response_model=PredictionResponse) #6.77777
+@app.post('/predict', response_model=PredictionResponse)
 def predict(data: StudentData):
-   
-   country_group = data.country if data.country in top_countries else "Other"
 
-   input_row = pd.DataFrame([{
-        'Age'                       :data.age,
-        'Gender'                    :data.gender,
-        'Country'                   :data.country,
-        'Academic_Level'            :data.academic_level,
-        'Most_Used_Platform'        :data.most_used_platform,
-        'Purpose_Of_Use'            :data.purpose_of_use,
-        'Avg_Daily_Usage_Hours'     :data.avg_daily_usage_hours,
-        'Daily_Unlocks'             :data.daily_unlocks,
-        'Study_Hours'               :data.study_hours,
-        'Physical_Activity_Hours'   :data.physical_activity_hours,
-        'Sleep_Hours_Per_Night'     :data.sleep_hours_per_night,
-        'Stress_Level'              :data.stress_level,
-        'Grouped_country'           :country_group
-   }])
+    country_group = country_lookup.get(data.country.strip().lower(), 'Other')
 
-   prediction = model.predict(input_row)[0] #6.77
-   return PredictionResponse(predicted_mental_health_score=round(float(prediction),2)) 
+    input_row = pd.DataFrame([{
+        'Age'                     : data.age,
+        'Gender'                  : data.gender,
+        'Academic_Level'          : data.academic_level,
+        'Most_Used_Platform'      : data.most_used_platform,
+        'Purpose_Of_Use'          : data.purpose_of_use,
+        'Avg_Daily_Usage_Hours'   : data.avg_daily_usage_hours,
+        'Daily_Unlocks'           : data.daily_unlocks,
+        'Study_Hours'             : data.study_hours,
+        'Physical_Activity_Hours' : data.physical_activity_hours,
+        'Sleep_Hours_Per_Night'   : data.sleep_hours_per_night,
+        'Stress_Level'            : data.stress_level,
+        'Grouped_country'         : country_group
+    }])
+
+    prediction = model.predict(input_row)[0]
+    return PredictionResponse(predicted_mental_health_score=round(float(prediction), 2))
