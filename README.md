@@ -2,12 +2,13 @@
 
 A web app that predicts a student's **mental health score (0 to 10)** from their social media use, sleep, study time, physical activity and stress level. Move a slider and the score updates on its own.
 
-- **Live app:** https://mental-health-score-2-wh5b.onrender.com
-- **API:** https://mental-health-score-hv5r.onrender.com (interactive docs at `/docs`)
+🔗 **Live demo:** https://mental-health-score-2-wh5b.onrender.com 📄 **API docs:** https://mental-health-score-hv5r.onrender.com/docs
+
+> The app runs on Render's free plan. If nobody has used it for a while, the first load can take 30–60 seconds while the server wakes up.
+
+![Signal web app: sliders and inputs on the left, score ring on the right](images/signal-ui.png)
 
 > Informational only. This is not a clinical assessment. If you are struggling, please talk to someone you trust.
-
-> The app runs on Render's free plan, so the first request after a period of no use can take up to a minute while the server wakes up.
 
 ---
 
@@ -143,6 +144,7 @@ Screen time does most of the work. Stress level has a strong link with the score
 ├── requirements.txt                                  # API dependencies (used by Render)
 ├── requirements-notebook.txt                         # extra packages to run the notebook
 ├── .python-version                                   # Python version (3.12.3)
+├── images/signal-ui.png                              # screenshot used in this README
 └── README.md
 ```
 
