@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Signal predicts a student's mental health score from screen time, sleep, study, movement and stress." />
 <title>Signal — Student Wellness</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%235B8CFF'/%3E%3Cstop offset='1' stop-color='%239B7BFF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='30' height='30' rx='10' fill='url(%23g)'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;800&display=swap" rel="stylesheet">
@@ -21,24 +23,25 @@
       <div class="intro">
         <h1>Tell us about your day</h1>
         <p>Move a slider and your signal updates on its own.</p>
+        <p class="hint">Slider ranges match the data the model was trained on.</p>
       </div>
 
       <form id="predict-form" novalidate>
         <div class="sliders">
-          <div class="sl"><div class="sl-top"><label for="avg_daily_usage_hours">Screen time</label><output id="o-usage">5.0 h</output></div><input type="range" id="avg_daily_usage_hours" min="0" max="9" step="0.1" value="5" /></div>
-          <div class="sl"><div class="sl-top"><label for="sleep_hours_per_night">Sleep</label><output id="o-sleep">7.0 h</output></div><input type="range" id="sleep_hours_per_night" min="3" max="10" step="0.1" value="7" /></div>
-          <div class="sl"><div class="sl-top"><label for="study_hours">Study</label><output id="o-study">3.0 h</output></div><input type="range" id="study_hours" min="0" max="9" step="0.1" value="3" /></div>
-          <div class="sl"><div class="sl-top"><label for="physical_activity_hours">Movement</label><output id="o-act">1.5 h</output></div><input type="range" id="physical_activity_hours" min="0" max="4.5" step="0.1" value="1.5" /></div>
-          <div class="sl"><div class="sl-top"><label for="daily_unlocks">Phone unlocks</label><output id="o-unl">170</output></div><input type="range" id="daily_unlocks" min="50" max="280" step="1" value="170" /></div>
+          <div class="sl"><div class="sl-top"><label for="avg_daily_usage_hours">Screen time</label><output id="o-usage">5.0 h</output></div><input type="range" id="avg_daily_usage_hours" min="1" max="8.8" step="0.1" value="5" /></div>
+          <div class="sl"><div class="sl-top"><label for="sleep_hours_per_night">Sleep</label><output id="o-sleep">7.0 h</output></div><input type="range" id="sleep_hours_per_night" min="3.6" max="9.9" step="0.1" value="7" /></div>
+          <div class="sl"><div class="sl-top"><label for="study_hours">Study</label><output id="o-study">3.0 h</output></div><input type="range" id="study_hours" min="0" max="8.3" step="0.1" value="3" /></div>
+          <div class="sl"><div class="sl-top"><label for="physical_activity_hours">Movement</label><output id="o-act">1.5 h</output></div><input type="range" id="physical_activity_hours" min="0" max="4.1" step="0.1" value="1.5" /></div>
+          <div class="sl"><div class="sl-top"><label for="daily_unlocks">Phone unlocks</label><output id="o-unl">170</output></div><input type="range" id="daily_unlocks" min="62" max="273" step="1" value="170" /></div>
         </div>
 
         <div class="stress-block">
           <span class="lbl" id="stress-label">How stressed do you feel?</span>
           <div class="segmented" id="stress_level_group" role="group" aria-labelledby="stress-label">
-            <button type="button" class="seg-btn" data-value="Low">Low</button>
-            <button type="button" class="seg-btn active" data-value="Medium">Medium</button>
-            <button type="button" class="seg-btn" data-value="High">High</button>
-            <button type="button" class="seg-btn" data-value="Very High">Very high</button>
+            <button type="button" class="seg-btn" data-value="Low" aria-pressed="false">Low</button>
+            <button type="button" class="seg-btn active" data-value="Medium" aria-pressed="true">Medium</button>
+            <button type="button" class="seg-btn" data-value="High" aria-pressed="false">High</button>
+            <button type="button" class="seg-btn" data-value="Very High" aria-pressed="false">Very high</button>
           </div>
           <input type="hidden" id="stress_level" name="stress_level" value="Medium" />
         </div>
@@ -50,7 +53,7 @@
             <div class="field"><label for="gender">Gender</label>
               <select id="gender"><option>Male</option><option>Female</option></select><span class="error-msg"></span></div>
             <div class="field"><label for="country">Country</label>
-              <input type="text" id="country" list="country-list" value="India" autocomplete="off" required />
+              <input type="text" id="country" list="country-list" value="India" autocomplete="off" maxlength="60" required />
               <datalist id="country-list"><option value="India"></option><option value="USA"></option><option value="Canada"></option><option value="Australia"></option><option value="UK"></option><option value="Germany"></option><option value="Mexico"></option><option value="Turkey"></option><option value="France"></option></datalist>
               <span class="error-msg"></span></div>
             <div class="field"><label for="academic_level">Academic level</label>

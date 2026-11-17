@@ -3,6 +3,8 @@
   // Change this if your backend runs somewhere else.
   const API_BASE = "https://mental-health-score-hv5r.onrender.com";
   const CIRC = 779.2; // 2 * pi * 124
+  const REQUEST_TIMEOUT_MS = 70000; // Render free plan can take up to a minute to wake up
+  const SLOW_HINT_MS = 4000;        // after this, tell the user the server is waking up
 
   const $ = (id) => document.getElementById(id);
   const form = $("predict-form"), submitBtn = $("submit-btn");
@@ -25,19 +27,27 @@
 
   // ---- stress segmented control
   const segBtns = document.querySelectorAll(".seg-btn");
+  function syncStress() {
+    segBtns.forEach((x) => {
+      const on = x.dataset.value === $("stress_level").value;
+      x.classList.toggle("active", on);
+      x.setAttribute("aria-pressed", String(on));
+    });
+  }
   segBtns.forEach((b) => b.addEventListener("click", () => {
-    segBtns.forEach((x) => x.classList.remove("active"));
-    b.classList.add("active");
     $("stress_level").value = b.dataset.value;
+    syncStress();
     schedule();
   }));
+  syncStress();
 
   // ---- validation
-  const RULES = { age: [18, 24], avg_daily_usage_hours: [0, 24], daily_unlocks: [0, Infinity], study_hours: [0, 24], physical_activity_hours: [0, 24], sleep_hours_per_night: [0, 24] };
+  const AGE = [18, 24];
+  const COUNTRY_MAX = 60;
   function setErr(el, msg) { const f = el.closest(".field"); if (!f) return; f.classList.toggle("field-error", !!msg); const m = f.querySelector(".error-msg"); if (m) m.textContent = msg || ""; }
   function collect() {
     return {
-      age: parseInt($("age").value, 10),
+      age: Number($("age").value),
       gender: $("gender").value,
       country: $("country").value.trim(),
       academic_level: $("academic_level").value,
@@ -54,55 +64,85 @@
   function validate(p) {
     let ok = true;
     ["age", "country"].forEach((k) => setErr($(k), ""));
-    const a = RULES.age;
-    if (Number.isNaN(p.age) || p.age < a[0] || p.age > a[1]) { setErr($("age"), `Enter an age from ${a[0]} to ${a[1]}.`); ok = false; }
+    if ($("age").value.trim() === "" || !Number.isInteger(p.age) || p.age < AGE[0] || p.age > AGE[1]) {
+      setErr($("age"), `Enter a whole number from ${AGE[0]} to ${AGE[1]}.`); ok = false;
+    }
     if (!p.country) { setErr($("country"), "Enter a country."); ok = false; }
+    else if (p.country.length > COUNTRY_MAX) { setErr($("country"), `Use at most ${COUNTRY_MAX} characters.`); ok = false; }
     return ok;
   }
 
   // ---- result rendering
+  // Bands follow the quartiles of Mental_Health_Score in the dataset:
+  // bottom 25% is below 5.1, top 25% is 7.1 or above.
+  const BAND_LOW = 5.1, BAND_HIGH = 7.1;
   function bandFor(s) {
-    if (s < 4) return ["Strained right now", "Small shifts in sleep or screen time can go a long way."];
-    if (s < 7) return ["Balanced and steady", "Your rhythm looks fairly steady, with some room to recover."];
-    return ["Strong and resilient", "Your habits point to a well-supported baseline. Keep it up."];
+    if (s < BAND_LOW) return ["Strained right now", "Lower than most students in the data. Small shifts in sleep or screen time can go a long way."];
+    if (s < BAND_HIGH) return ["Balanced and steady", "In the middle range of students in the data, with some room to recover."];
+    return ["Strong and resilient", "Higher than most students in the data. Your habits point to a well-supported baseline."];
   }
-  let shown = 0, raf = null, goal = 0;
+  let shown = 0, raf = null, goal = 0, hasScore = false;
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   function paintNum(v) { numEl.textContent = v.toFixed(2); }
   function step() { shown += (goal - shown) * 0.16; if (Math.abs(goal - shown) < 0.004) { shown = goal; raf = null; } else raf = requestAnimationFrame(step); paintNum(shown); }
+  function setStatus(msg, isErr) { statusEl.textContent = msg; statusEl.classList.toggle("err", !!isErr); }
   function render(score) {
     const c = Math.max(0, Math.min(10, score)), [b, t] = bandFor(c);
-    bandEl.textContent = b; ctxEl.textContent = t; statusEl.textContent = ""; statusEl.classList.remove("err");
+    bandEl.textContent = b; ctxEl.textContent = t; setStatus("", false);
     fill.style.strokeDashoffset = String(CIRC * (1 - c / 10));
-    goal = score;
-    if (reduce) { shown = score; paintNum(score); } else if (!raf) raf = requestAnimationFrame(step);
+    goal = c; hasScore = true;
+    if (reduce) { shown = c; paintNum(c); } else if (!raf) raf = requestAnimationFrame(step);
   }
-    function showError(msg) {
-    statusEl.textContent = msg; statusEl.classList.add("err");
-    if (!/\d/.test(numEl.textContent)) {   // no score has been shown yet
+  function showError(msg) {
+    setStatus(msg, true);
+    if (!hasScore) {
       bandEl.textContent = "We couldn't read your signal";
       ctxEl.textContent = "Please try again in a moment.";
     }
   }
+  async function errorDetail(res) {
+    try {
+      const body = await res.json();
+      if (Array.isArray(body.detail) && body.detail.length && body.detail[0].msg) {
+        return body.detail[0].msg.replace(/^Value error, /, "");
+      }
+    } catch (_) { /* body was not JSON */ }
+    return "";
+  }
 
   // ---- API
-  let seq = 0;
+  let seq = 0, controller = null;
   async function predict() {
     const p = collect();
-    if (!validate(p)) return;
+    if (!validate(p)) { setStatus("Fix the highlighted field to update your score.", true); return; }
     const mine = ++seq;
-    submitBtn.disabled = true; if (!statusEl.classList.contains("err")) statusEl.textContent = "Updating…";
+    if (controller) controller.abort();         // cancel the older request, only the newest one matters
+    controller = new AbortController();
+    const ctrl = controller;
+    const timeout = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
+    const slow = setTimeout(() => { if (mine === seq) setStatus("Waking up the server. This can take up to a minute the first time…", false); }, SLOW_HINT_MS);
+    submitBtn.disabled = true;
+    setStatus("Updating…", false);
     try {
-      const res = await fetch(`${API_BASE}/predict`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) });
+      const res = await fetch(`${API_BASE}/predict`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p), signal: ctrl.signal });
       if (mine !== seq) return;
-      if (res.status === 422) { showError("The server rejected one of the answers. Please check them and try again."); return; }
-      if (!res.ok) { showError(`The server responded with status ${res.status}.`); return; }
+      if (res.status === 422) {
+        const detail = await errorDetail(res);
+        if (mine !== seq) return;
+        showError(detail ? `The server rejected an answer: ${detail}` : "The server rejected one of the answers. Please check them and try again.");
+        return;
+      }
+      if (!res.ok) { showError(`The server responded with status ${res.status}. Please try again.`); return; }
       const data = await res.json();
+      if (mine !== seq) return;
       if (typeof data.predicted_mental_health_score !== "number") { showError("The server replied without a score."); return; }
       render(data.predicted_mental_health_score);
     } catch (e) {
-      if (mine === seq) showError("Can't reach the server right now. Please check your connection and try again.");
+      if (mine !== seq) return;                  // aborted because a newer request started
+      if (e.name === "AbortError") showError("The server took too long to answer. Please try again.");
+      else showError("Can't reach the server right now. Please check your connection and try again.");
     } finally {
+      clearTimeout(timeout); clearTimeout(slow);
       if (mine === seq) submitBtn.disabled = false;
     }
   }

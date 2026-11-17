@@ -25,6 +25,7 @@ body{
 .form-card{padding:34px;display:flex;flex-direction:column;gap:26px}
 .intro h1{margin:0;font-size:clamp(1.7rem,3.4vw,2.1rem);font-weight:800;letter-spacing:-.02em;line-height:1.15}
 .intro p{margin:6px 0 0;color:var(--ink-soft);font-size:15px}
+.intro p.hint{margin-top:4px;font-size:13px}
 form{display:flex;flex-direction:column;gap:26px}
 
 .sliders{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 36px}
