@@ -2,7 +2,7 @@
 
 A web app that predicts a student's **mental health score (0 to 10)** from their social media use, sleep, study time, physical activity and stress level. Move a slider and the score updates on its own.
 
-🔗 **Live demo:** https://mental-health-score-2-wh5b.onrender.com 📄 **API docs:** https://mental-health-score-hv5r.onrender.com/docs
+🔗 **Live demo:** https://mental-health-score-2-wh5b.onrender.com · 📄 **API docs:** https://mental-health-score-hv5r.onrender.com/docs
 
 > The app runs on Render's free plan. If nobody has used it for a while, the first load can take 30–60 seconds while the server wakes up.
 

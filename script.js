@@ -2,7 +2,7 @@
   "use strict";
   // Change this if your backend runs somewhere else.
   const API_BASE = "https://mental-health-score-hv5r.onrender.com";
-  const CIRC = 779.2; // 2 * pi * 124
+  const CIRC = 779.2; // about 2 * pi * 124 (ring radius), same value as stroke-dasharray in style.css
   const REQUEST_TIMEOUT_MS = 70000; // Render free plan can take up to a minute to wake up
   const SLOW_HINT_MS = 4000;        // after this, tell the user the server is waking up
 
@@ -114,7 +114,14 @@
   let seq = 0, controller = null;
   async function predict() {
     const p = collect();
-    if (!validate(p)) { setStatus("Fix the highlighted field to update your score.", true); return; }
+    if (!validate(p)) {
+      // Drop any request still running, so an older answer can't overwrite this message.
+      ++seq;
+      if (controller) { controller.abort(); controller = null; }
+      submitBtn.disabled = false;
+      setStatus("Fix the highlighted field to update your score.", true);
+      return;
+    }
     const mine = ++seq;
     if (controller) controller.abort();         // cancel the older request, only the newest one matters
     controller = new AbortController();
